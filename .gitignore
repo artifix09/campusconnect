@@ -11,11 +11,6 @@ next-env.d.ts
 build/
 dist/
 
-# service worker build output
-public/sw.js
-public/sw.js.map
-public/swe-worker-*.js
-
 # testing
 coverage/
 playwright-report/
