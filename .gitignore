@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# production
+build/
+dist/
+
+# service worker build output
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+
+# testing
+coverage/
+playwright-report/
+test-results/
+
+# env files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# vercel
+.vercel

@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "bierner.markdown-mermaid",
+    "DavidAnson.vscode-markdownlint",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "Prisma.prisma",
+    "bradlc.vscode-tailwindcss"
+  ]
+}
