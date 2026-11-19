@@ -131,4 +131,17 @@ sequenceDiagram
 | Partial indexes | `WHERE status IN (...)` partial indexes | Composite indexes `(status, due_at)` and similar | Prisma cannot model partial indexes and would try to drop them on every migration. |
 | Analytics cache | Tag-based invalidation | 60-second TTL per server instance | Simple and sufficient. Numbers are at most one minute old. |
 | HEIC uploads | Accepted | Not accepted | The standard image library build cannot decode HEIC. iOS Safari converts photos to JPEG when uploading. |
-| Sign-in rate limits | Upstash Redis | Better Auth's limiter stored in the `rate_limit` table | Keeps auth throttling inside the auth library and shared across instances. Upstash still limits complaint, upload, comment and export actions. |
+| Sign-in rate limits | Upstash Redis, 5 per 15 min | Better Auth's limiter in the `rate_limit` table, 30 sign-ins per minute per IP | A campus usually shares one public IP, so a strict per-IP limit would lock out everyone. Upstash still limits complaint, upload, comment and export actions per user. |
+| Photo storage on Vercel | Cloudflare R2 with signed URLs | Private Vercel Blob store (`sin1`), streamed through `/api/v1/attachments/:id` | Provisioned from the Vercel CLI with no extra account. Files are never public and are only sent after the complaint access check. The S3 backend remains for self-hosting. |
+| Email | Resend | Authenticated SMTP (Gmail app password) until the university provides a sending domain | Resend requires a verified domain. Any SMTP server works through `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`. |
+| Scheduled jobs | Hourly and every 5 minutes | Daily | The Vercel Hobby plan only allows daily cron jobs. Notifications are still sent immediately after each change; cron only retries failures. |
+
+## 8. Live deployment
+
+| Piece | Value |
+|---|---|
+| App | Vercel project `campusconnect`, region `sin1`, deploys on every push to `main` |
+| Database | Neon Postgres (free plan), `ap-southeast-1` |
+| Photos | Vercel Blob, private store `campusconnect-photos`, `sin1` |
+| Rate limits | Upstash Redis (free plan), connected through the Vercel Marketplace |
+| Migrations | Run `prisma migrate deploy` with the Neon direct URL before deploying schema changes |
