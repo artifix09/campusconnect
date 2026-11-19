@@ -23,19 +23,21 @@ export function StatCard({
     <>
       <div className="flex items-start justify-between gap-3">
         <p className={cn("text-[0.9375rem] font-semibold sm:text-base", featured ? "text-white" : "text-ink")}>{label}</p>
-        <span
-          aria-hidden
-          className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-full border transition-transform duration-200 group-hover:rotate-45",
-            featured ? "border-white/60 bg-white text-brand-900" : "border-line-strong text-ink",
-          )}
-        >
-          {icon ?? <ArrowUpRight className="size-4" />}
-        </span>
+        {href || icon ? (
+          <span
+            aria-hidden
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-full border transition-transform duration-200 group-hover:rotate-45",
+              featured ? "border-white/60 bg-white text-brand-900" : "border-line-strong text-ink",
+            )}
+          >
+            {icon ?? <ArrowUpRight className="size-4" />}
+          </span>
+        ) : null}
       </div>
       <p
         className={cn(
-          "mt-4 text-5xl font-semibold leading-none tracking-tight tabular-nums",
+          "mt-4 text-[2rem] font-semibold leading-none tracking-tight tabular-nums [overflow-wrap:normal] sm:text-5xl",
           featured ? "text-white" : "text-ink",
         )}
       >

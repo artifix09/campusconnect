@@ -83,7 +83,7 @@ export function RegisterForm() {
           {(p) => <Input {...p} autoComplete="name" value={form.name} onChange={set("name")} />}
         </Field>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <Field label="University email" error={errors.email}>
             {(p) => (
               <Input {...p} type="email" inputMode="email" autoComplete="email" value={form.email} onChange={set("email")} />

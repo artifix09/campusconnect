@@ -37,7 +37,11 @@ export function DepartmentBars({ data }: { data: DepartmentDatum[] }) {
               {d.total > 0
                 ? SEGMENTS.map((s) =>
                     d[s.key] > 0 ? (
-                      <div key={s.key} className={s.className} style={{ height: `${(d[s.key] / d.total) * 100}%` }} />
+                      <div
+                        key={s.key}
+                        className={s.className}
+                        style={{ height: `${(d[s.key] / d.total) * 100}%` }}
+                      />
                     ) : null,
                   )
                 : null}
@@ -47,7 +51,11 @@ export function DepartmentBars({ data }: { data: DepartmentDatum[] }) {
       </div>
       <div className="mt-3 flex gap-3 sm:gap-6" aria-hidden>
         {data.map((d) => (
-          <span key={d.name} className="min-w-0 flex-1 truncate text-center text-xs font-medium text-muted" title={d.name}>
+          <span
+            key={d.name}
+            className="min-w-0 flex-1 truncate text-center text-xs font-medium text-muted"
+            title={d.name}
+          >
             {d.short}
           </span>
         ))}
@@ -60,31 +68,34 @@ export function DepartmentBars({ data }: { data: DepartmentDatum[] }) {
           </span>
         ))}
       </figcaption>
-      <table className="sr-only">
-        <caption>{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Department</th>
-            <th scope="col">Total</th>
-            {SEGMENTS.map((s) => (
-              <th key={s.key} scope="col">
-                {s.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((d) => (
-            <tr key={d.name}>
-              <th scope="row">{d.name}</th>
-              <td>{d.total}</td>
+      {/* Tables ignore width:1px, so the hidden wrapper is a div. */}
+      <div className="sr-only">
+        <table>
+          <caption>{caption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Department</th>
+              <th scope="col">Total</th>
               {SEGMENTS.map((s) => (
-                <td key={s.key}>{d[s.key]}</td>
+                <th key={s.key} scope="col">
+                  {s.label}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((d) => (
+              <tr key={d.name}>
+                <th scope="row">{d.name}</th>
+                <td>{d.total}</td>
+                {SEGMENTS.map((s) => (
+                  <td key={s.key}>{d[s.key]}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

@@ -96,14 +96,14 @@ const backend: Backend | null = env.BLOB_READ_WRITE_TOKEN
 
 export const storageEnabled = backend !== null;
 
-function use(): Backend {
+function backendOrThrow(): Backend {
   if (!backend) throw new BusinessRuleError("Photo uploads are not set up on this server yet.", "storage-disabled");
   return backend;
 }
 
 export const storage = {
-  put: (key: string, body: Buffer, contentType: string) => use().put(key, body, contentType),
-  open: (key: string) => use().open(key),
-  remove: (key: string) => use().remove(key),
-  ping: () => use().ping(),
+  put: (key: string, body: Buffer, contentType: string) => backendOrThrow().put(key, body, contentType),
+  open: (key: string) => backendOrThrow().open(key),
+  remove: (key: string) => backendOrThrow().remove(key),
+  ping: () => backendOrThrow().ping(),
 };

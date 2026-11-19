@@ -16,7 +16,7 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader title="Settings" description="Your profile, notifications and account security." />
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card>
           <CardHeader title="Profile" />
           <div className="flex items-center gap-4">

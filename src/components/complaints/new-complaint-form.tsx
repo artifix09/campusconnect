@@ -168,7 +168,7 @@ export function NewComplaintForm({ categories, initialCategory }: { categories: 
   }
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]" noValidate>
+    <form onSubmit={onSubmit} className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]" noValidate>
       <div className="flex min-w-0 flex-col gap-5">
         <Step n={1} title="What is it about?">
           <div
@@ -177,7 +177,7 @@ export function NewComplaintForm({ categories, initialCategory }: { categories: 
             role="radiogroup"
             aria-label="Category"
             aria-describedby={errors.category ? "category-error" : undefined}
-            className="grid gap-3 outline-none sm:grid-cols-2"
+            className="grid grid-cols-1 gap-3 outline-none sm:grid-cols-2"
           >
             {categories.map((c) => {
               const selected = c.id === categoryId;

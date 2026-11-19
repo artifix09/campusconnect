@@ -54,7 +54,7 @@ export default async function StudentDashboard() {
         <StatCard label="Pending" value={summary.pending} href="/student/complaints?status=PENDING" note="Waiting for a response" />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader
             title="Recent complaints"
@@ -109,7 +109,7 @@ export default async function StudentDashboard() {
       <div className="mt-4 flex flex-col gap-4 lg:flex-row">
         <Card className="min-w-0 flex-1">
           <CardHeader title="Report something quickly" description="Pick a category to start a complaint." />
-          <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-4">
             {categories.map((c) => (
               <Link
                 key={c.id}

@@ -13,6 +13,12 @@ export function formatDate(value: string | Date, withTime = false): string {
   }).format(date);
 }
 
+/** "9 Nov", for chart axes. */
+export function formatShortDate(value: string | Date): string {
+  const date = typeof value === "string" ? new Date(value) : value;
+  return new Intl.DateTimeFormat("en-GB", { timeZone: TZ, day: "numeric", month: "short" }).format(date);
+}
+
 export function formatRelative(value: string | Date, now = new Date()): string {
   const date = typeof value === "string" ? new Date(value) : value;
   const seconds = Math.round((date.getTime() - now.getTime()) / 1000);

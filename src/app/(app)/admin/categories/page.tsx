@@ -21,7 +21,7 @@ export default async function RoutingPage() {
         title="Routing"
         description="Each category sends complaints to one department. Changes apply to new complaints only."
       />
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {categories.map((c) => (
           <Card key={c.id}>
             <div className="flex items-start gap-4">

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { cn } from "@/lib/cn";
 
 /**
@@ -5,12 +6,14 @@ import { cn } from "@/lib/cn";
  * of its gap, standing for a student's report connecting to the right office.
  */
 export function LogoMark({ className, inverted = false }: { className?: string; inverted?: boolean }) {
-  const ring = inverted ? "#ffffff" : "url(#cc-ring)";
+  // Unique per instance: a gradient referenced from a hidden copy of the logo would not render.
+  const gradientId = `cc-ring-${useId().replace(/:/g, "")}`;
+  const ring = inverted ? "#ffffff" : `url(#${gradientId})`;
   const node = inverted ? "#ffffff" : "#1f7148";
   return (
     <svg viewBox="0 0 40 40" className={cn("size-10", className)} aria-hidden focusable="false">
       <defs>
-        <linearGradient id="cc-ring" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#2b8b5b" />
           <stop offset="1" stopColor="#0f3624" />
         </linearGradient>

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ClipboardList, Download, Inbox } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ClipboardList, Download, Inbox } from "lucide-react";
 import { requirePageSession } from "@/lib/page-session";
-import { formatDate, formatRelative } from "@/lib/format";
+import { formatDate, formatRelative, formatShortDate } from "@/lib/format";
 import { toWeek } from "@/lib/week";
 import { getByDepartment, getSummary, getTopIssues, getTrend } from "@/modules/analytics/service";
 import { listComplaints } from "@/modules/complaints/service";
@@ -97,7 +97,7 @@ export default async function AdminDashboard() {
         />
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-12">
+      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
         <Card className="xl:col-span-5">
           <CardHeader title="Complaints this week" description={`${thisWeek} received so far`} />
           <PillBars data={week} caption="Complaints received per day this week" />
@@ -127,8 +127,12 @@ export default async function AdminDashboard() {
           <CardHeader
             title="Most reported"
             action={
-              <Link href="/admin/analytics" className="inline-flex h-9 items-center gap-1 rounded-full border border-brand-800 px-3.5 text-sm font-semibold text-brand-900 hover:bg-brand-50 focus-ring">
-                Analytics
+              <Link
+                href="/admin/analytics"
+                aria-label="Open analytics"
+                className="flex size-9 items-center justify-center rounded-full border border-line-strong text-ink transition-transform duration-200 hover:rotate-45 focus-ring"
+              >
+                <ArrowUpRight className="size-4" aria-hidden />
               </Link>
             }
           />
@@ -188,7 +192,7 @@ export default async function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-12">
+      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
         {isSuper ? (
           <Card className="xl:col-span-9">
             <CardHeader title="Complaints by department" description="How many complaints each office has received, by status." />
@@ -209,7 +213,7 @@ export default async function AdminDashboard() {
             <CardHeader title="Last 12 weeks" description="Complaints received and resolved each week." />
             <TrendChart
               data={weekly.map((w) => ({
-                label: formatDate(w.period).replace(/ d{4}$/, ""),
+                label: formatShortDate(w.period),
                 created: w.created,
                 resolved: w.resolved,
               }))}

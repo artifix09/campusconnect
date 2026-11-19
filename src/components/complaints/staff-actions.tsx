@@ -61,6 +61,14 @@ export function StaffActions(props: Props) {
       }),
     );
 
+  if (!open && !(props.isSuperAdmin && props.isAnonymous)) {
+    return (
+      <p className="rounded-2xl bg-shell px-4 py-3 text-sm text-muted">
+        This complaint is closed ({props.status === "RESOLVED" ? "resolved" : props.status === "REJECTED" ? "rejected" : "withdrawn by the student"}). No further actions are needed.
+      </p>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {error && mode === null ? <FormMessage>{error}</FormMessage> : null}

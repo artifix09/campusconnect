@@ -1,6 +1,12 @@
 import { cn } from "@/lib/cn";
 
-export type PillDatum = { label: string; fullLabel: string; value: number; upcoming?: boolean; current?: boolean };
+export type PillDatum = {
+  label: string;
+  fullLabel: string;
+  value: number;
+  upcoming?: boolean;
+  current?: boolean;
+};
 
 /**
  * Week view of complaints received per day, drawn as rounded pills.
@@ -42,30 +48,36 @@ export function PillBars({ data, caption }: { data: PillDatum[]; caption: string
         {data.map((d) => (
           <span
             key={d.fullLabel}
-            className={cn("flex-1 text-center text-sm", d.current ? "font-semibold text-brand-800" : "text-muted")}
+            className={cn(
+              "flex-1 text-center text-sm",
+              d.current ? "font-semibold text-brand-800" : "text-muted",
+            )}
           >
             {d.label}
           </span>
         ))}
       </div>
       <figcaption className="sr-only">{caption}</figcaption>
-      <table className="sr-only">
-        <caption>{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Day</th>
-            <th scope="col">Complaints</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((d) => (
-            <tr key={d.fullLabel}>
-              <th scope="row">{d.fullLabel}</th>
-              <td>{d.upcoming ? "Upcoming" : d.value}</td>
+      {/* Tables ignore width:1px, so the hidden wrapper is a div. */}
+      <div className="sr-only">
+        <table>
+          <caption>{caption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col">Complaints</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((d) => (
+              <tr key={d.fullLabel}>
+                <th scope="row">{d.fullLabel}</th>
+                <td>{d.upcoming ? "Upcoming" : d.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePageSession } from "@/lib/page-session";
 import { cn } from "@/lib/cn";
-import { formatDate, formatHours, STATUS_LABEL } from "@/lib/format";
+import { formatHours, formatShortDate, STATUS_LABEL } from "@/lib/format";
 import { getByDepartment, getByStatus, getSummary, getTopIssues, getTrend } from "@/modules/analytics/service";
 import { Card, CardHeader, PageHeader } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -75,11 +75,11 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         <StatCard label="Satisfaction" value={summary.avgRating === null ? "No data" : `${summary.avgRating}/5`} note="Average student rating" />
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
           <CardHeader title="Received vs resolved" description="Last 12 weeks" />
           <TrendChart
-            data={trend.map((t) => ({ label: formatDate(t.period).replace(/ \d{4}$/, ""), created: t.created, resolved: t.resolved }))}
+            data={trend.map((t) => ({ label: formatShortDate(t.period), created: t.created, resolved: t.resolved }))}
           />
         </Card>
         <Card>
@@ -101,7 +101,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </Card>
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader title={isSuper ? "Complaints by department" : "Your department"} description="Bar heights share one scale." />
           <DepartmentBars

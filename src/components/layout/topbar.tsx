@@ -66,7 +66,7 @@ export function Topbar({ user, unread }: { user: User; unread: number }) {
             id="global-search"
             type="search"
             defaultValue={params.get("q") ?? ""}
-            placeholder={user.role === "STUDENT" ? "Search my complaints" : "Search by title or CC- number"}
+            placeholder={user.role === "STUDENT" ? "Search complaints" : "Search title or CC- number"}
             className="h-12 w-full rounded-full border border-transparent bg-surface pl-12 pr-4 text-ink placeholder:text-muted focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-100 sm:pr-20"
           />
           <kbd className="pointer-events-none absolute right-4 top-1/2 hidden -translate-y-1/2 rounded-md bg-shell px-2 py-0.5 text-xs font-medium text-muted sm:block">

@@ -14,11 +14,12 @@ export function ComplaintCard({ complaint, href }: { complaint: ComplaintListIte
     >
       <CategoryIcon code={complaint.category.code} />
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="truncate font-semibold text-ink">{complaint.title}</p>
+        <p className="line-clamp-2 font-semibold text-ink sm:truncate">{complaint.title}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 sm:hidden">
+          <StatusBadge status={complaint.status} />
           {complaint.overdue ? <OverdueBadge /> : null}
         </div>
-        <p className="mt-0.5 truncate text-xs text-muted">
+        <p className="mt-1 truncate text-xs text-muted sm:mt-0.5">
           <span className="font-semibold text-ink-soft">{complaint.referenceNo}</span>
           <span aria-hidden> · </span>
           {complaint.department.name}
@@ -40,7 +41,10 @@ export function ComplaintCard({ complaint, href }: { complaint: ComplaintListIte
           </span>
         ) : null}
       </div>
-      <StatusBadge status={complaint.status} />
+      <div className="hidden shrink-0 items-center gap-2 sm:flex">
+        {complaint.overdue ? <OverdueBadge /> : null}
+        <StatusBadge status={complaint.status} />
+      </div>
       <ChevronRight className="size-5 shrink-0 text-muted transition-transform group-hover:translate-x-0.5" aria-hidden />
     </Link>
   );
