@@ -82,8 +82,17 @@ const schema = z
 
 export type Env = z.infer<typeof schema>;
 
+/** On Vercel, fall back to the project's production domain when APP_URL is not set. */
+function source(): NodeJS.ProcessEnv {
+  const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return {
+    ...process.env,
+    APP_URL: process.env.APP_URL || (vercelHost ? `https://${vercelHost}` : undefined),
+  };
+}
+
 function load(): Env {
-  const parsed = schema.safeParse(process.env);
+  const parsed = schema.safeParse(source());
   if (parsed.success) return parsed.data;
 
   const problems = parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n");
@@ -92,7 +101,7 @@ function load(): Env {
   // there, so fall back to placeholders instead of failing the build.
   if (process.env.NEXT_PHASE === "phase-production-build") {
     return schema.parse({
-      ...process.env,
+      ...source(),
       DATABASE_URL: process.env.DATABASE_URL || "postgresql://build:build@localhost:5432/build",
       BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || "build-time-placeholder-secret-0000000000",
       CRON_SECRET: process.env.CRON_SECRET || "build-time-placeholder",
