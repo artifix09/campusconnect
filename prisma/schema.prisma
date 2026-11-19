@@ -168,10 +168,15 @@ model TwoFactor {
   userId      String @map("user_id") @db.Uuid
   secret      String
   backupCodes String @map("backup_codes")
+  /// Lockout after repeated wrong codes (Better Auth 1.7+).
+  verified                Boolean   @default(true)
+  failedVerificationCount Int       @default(0) @map("failed_verification_count")
+  lockedUntil             DateTime? @map("locked_until") @db.Timestamptz
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([secret])
   @@map("two_factor")
 }
 
