@@ -1,22 +1,28 @@
 /*
  * CampusConnect service worker (docs/07-pwa-and-mobile.md).
  *
- * - App shell and static assets: cache-first (hashed, immutable).
- * - Student pages and their data: network-first with a 3 s timeout, then cache.
- * - Admin pages, auth and every write: network-only. Many students' data
- *   must never be stored on a shared device.
- * - Logout sends CLEAR_USER_DATA, which deletes every runtime cache.
+ * Online, every page and every piece of data comes from the server, so users
+ * always see the current version. Saved copies are used only when the device
+ * is really offline:
+ * - build assets and icons: cache-first (file names are hashed and never change);
+ * - student pages: network, with the last copy kept for offline reading;
+ * - React Server Component payloads, admin pages, auth and all writes: network only.
+ * A new version activates immediately and removes the previous version's saved pages.
+ * Logout sends CLEAR_USER_DATA, which deletes every saved page and response.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL = `cc-shell-${VERSION}`;
 const PAGES = `cc-pages-${VERSION}`;
 const DATA = `cc-data-${VERSION}`;
-const ASSETS = `cc-assets-${VERSION}`;
+const ASSETS = "cc-assets"; // hashed, immutable files can outlive a version
 const OFFLINE_URL = "/offline";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(SHELL).then((cache) => cache.addAll([OFFLINE_URL, "/icons/icon.svg", "/icons/icon-192.png"])),
+    caches
+      .open(SHELL)
+      .then((cache) => cache.addAll([OFFLINE_URL, "/icons/icon.svg", "/icons/icon-192.png"]))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -32,31 +38,30 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
   if (event.data?.type === "CLEAR_USER_DATA") {
     event.waitUntil(Promise.all([caches.delete(PAGES), caches.delete(DATA)]));
   }
 });
 
-const isStudentPage = (url) => url.pathname === "/student" || url.pathname.startsWith("/student/");
-const isCacheableData = (url) =>
-  url.pathname === "/api/v1/categories" ||
-  (url.pathname === "/api/v1/complaints" && !url.search.includes("cursor")) ||
-  /^\/api\/v1\/complaints\/[0-9a-f-]{36}$/.test(url.pathname);
+const isStudentPage = (url) =>
+  url.pathname === "/student" ||
+  url.pathname.startsWith("/student/") ||
+  ["/notifications", "/settings", "/help"].includes(url.pathname);
 
-function timeout(ms) {
-  return new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms));
-}
+const isRscRequest = (request, url) => request.headers.get("RSC") === "1" || url.searchParams.has("_rsc");
 
-async function networkFirst(request, cacheName, preload) {
-  const cache = await caches.open(cacheName);
+/** Network first; the saved copy is only used when the network request fails. */
+async function networkThenSaved(request, cacheName, preload) {
   try {
-    const response = await Promise.race([preload ?? fetch(request), timeout(3000)]);
-    if (response && response.ok) cache.put(request, response.clone());
+    const response = (await preload) || (await fetch(request));
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      await cache.put(request, response.clone());
+    }
     return response;
   } catch {
-    const cached = await cache.match(request);
-    if (cached) return cached;
+    const saved = await caches.match(request);
+    if (saved) return saved;
     throw new Error("offline");
   }
 }
@@ -66,9 +71,6 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-
-  // Never cached: admin areas, auth, attachments (signed URLs) and everything else under /api.
-  if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/api/auth")) return;
 
   if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
     event.respondWith(
@@ -83,32 +85,21 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (url.pathname.startsWith("/api/")) {
-    if (isCacheableData(url)) {
-      event.respondWith(networkFirst(request, DATA).catch(() => new Response(JSON.stringify({ title: "Offline" }), { status: 503, headers: { "Content-Type": "application/problem+json" } })));
-    }
-    return;
-  }
+  // Never stored: RSC payloads (tied to one build), admin pages, auth and other API calls.
+  if (isRscRequest(request, url) || url.pathname.startsWith("/admin") || url.pathname.startsWith("/api/auth")) return;
 
-  // Student pages, including React Server Component payloads for client navigation.
-  if (isStudentPage(url) || url.pathname === "/notifications" || url.pathname === "/settings" || url.pathname === "/help") {
-    event.respondWith(
-      networkFirst(request, PAGES, request.mode === "navigate" ? event.preloadResponse : undefined).catch(async () =>
-        request.mode === "navigate" ? ((await caches.match(OFFLINE_URL)) ?? Response.error()) : Response.error(),
-      ),
-    );
+  if (url.pathname === "/api/v1/categories") {
+    event.respondWith(networkThenSaved(request, DATA));
     return;
   }
+  if (url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(
-      (async () => {
-        try {
-          return (await event.preloadResponse) || (await fetch(request));
-        } catch {
-          return (await caches.match(OFFLINE_URL)) ?? Response.error();
-        }
-      })(),
+      (isStudentPage(url)
+        ? networkThenSaved(request, PAGES, event.preloadResponse)
+        : (async () => (await event.preloadResponse) || fetch(request))()
+      ).catch(async () => (await caches.match(OFFLINE_URL)) ?? Response.error()),
     );
   }
 });
@@ -117,7 +108,9 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("sync", (event) => {
   if (event.tag !== "complaint-outbox") return;
   event.waitUntil(
-    self.clients.matchAll({ type: "window" }).then((clients) => clients.forEach((c) => c.postMessage({ type: "FLUSH_OUTBOX" }))),
+    self.clients
+      .matchAll({ type: "window" })
+      .then((clients) => clients.forEach((c) => c.postMessage({ type: "FLUSH_OUTBOX" }))),
   );
 });
 
@@ -129,13 +122,17 @@ self.addEventListener("push", (event) => {
     // keep defaults
   }
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
-      tag: data.tag,
-      data: { url: data.url },
-    }),
+    Promise.all([
+      self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        tag: data.tag,
+        data: { url: data.url },
+      }),
+      // Open tabs refresh their data straight away.
+      self.clients.matchAll({ type: "window" }).then((clients) => clients.forEach((c) => c.postMessage({ type: "REFRESH" }))),
+    ]),
   );
 });
 

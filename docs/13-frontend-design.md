@@ -99,4 +99,6 @@ flowchart LR
 | Offline complaint outbox (IndexedDB + Idempotency-Key) | `src/lib/offline-queue.ts` |
 | Push subscribe and unsubscribe | `src/components/notifications/push.ts` |
 
+Online, the service worker always fetches pages from the server; saved copies are only used offline, and a new version activates immediately (an earlier version served saved pages after a 3-second timeout, which showed outdated screens after deploys). Open pages stay current through `src/components/live-updates.tsx`: every 8 seconds while visible it reads a change stamp from `GET /api/v1/updates` and re-renders server data in place only when something in the user's scope changed. Push notifications and returning to the tab trigger an immediate check.
+
 The service worker is hand-written instead of Serwist. It is about 150 lines, has no build plugin, and works with Turbopack. The caching rules are short enough to review line by line.

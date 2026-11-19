@@ -11,8 +11,6 @@ type PwaState = {
   isStandalone: boolean;
   isIos: boolean;
   install: () => Promise<void>;
-  updateReady: boolean;
-  applyUpdate: () => void;
   online: boolean;
 };
 
@@ -24,14 +22,21 @@ export function usePwa() {
   return ctx;
 }
 
+/** Event other components listen to when the server says data changed. */
+export const REFRESH_EVENT = "cc-refresh";
+
+function isTyping() {
+  const el = document.activeElement;
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement;
+}
+
 /**
- * Registers the service worker, keeps the install prompt for our own
- * "Install app" button, offers updates without forcing a reload mid-form,
- * and sends queued offline complaints when the connection returns.
+ * Registers the service worker and keeps it current, keeps the install prompt
+ * for our own "Install app" button, and sends queued offline complaints when
+ * the connection returns.
  */
 export function PwaProvider({ children }: { children: ReactNode }) {
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
-  const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const isStandalone = useStandalone();
   const isIos = useIsIos();
   const online = useOnline();
@@ -48,25 +53,29 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     window.addEventListener("appinstalled", onInstalled);
     window.addEventListener("online", onOnline);
 
+    let registration: ServiceWorkerRegistration | undefined;
+    const checkForUpdate = () => {
+      if (document.visibilityState === "visible") void registration?.update().catch(() => undefined);
+    };
+
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/sw.js", { scope: "/" }).then((registration) => {
-        if (registration.waiting && navigator.serviceWorker.controller) setWaiting(registration.waiting);
-        registration.addEventListener("updatefound", () => {
-          const worker = registration.installing;
-          worker?.addEventListener("statechange", () => {
-            if (worker.state === "installed" && navigator.serviceWorker.controller) setWaiting(worker);
-          });
-        });
-      });
+      const hadController = Boolean(navigator.serviceWorker.controller);
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/", updateViaCache: "none" })
+        .then((r) => (registration = r))
+        .catch(() => undefined);
+
       navigator.serviceWorker.addEventListener("message", (event) => {
         if (event.data?.type === "FLUSH_OUTBOX") void flushOutbox();
+        if (event.data?.type === "REFRESH") window.dispatchEvent(new Event(REFRESH_EVENT));
       });
-      let reloaded = false;
+
+      // A new version took over: reload once so the page and its assets match,
+      // unless the user is typing (the next navigation picks up the new version).
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (reloaded) return;
-        reloaded = true;
-        window.location.reload();
+        if (hadController && !isTyping()) window.location.reload();
       });
+      document.addEventListener("visibilitychange", checkForUpdate);
     }
 
     void flushOutbox();
@@ -75,6 +84,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
       window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", checkForUpdate);
     };
   }, []);
 
@@ -85,12 +95,8 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     setPrompt(null);
   }, [prompt]);
 
-  const applyUpdate = useCallback(() => waiting?.postMessage({ type: "SKIP_WAITING" }), [waiting]);
-
   return (
-    <PwaContext.Provider
-      value={{ canInstall: Boolean(prompt), isStandalone, isIos, install, updateReady: Boolean(waiting), applyUpdate, online }}
-    >
+    <PwaContext.Provider value={{ canInstall: Boolean(prompt), isStandalone, isIos, install, online }}>
       {children}
     </PwaContext.Provider>
   );

@@ -354,11 +354,12 @@ export async function addComment(actor: Actor, id: string, input: z.infer<typeof
       data: { complaintId: id, authorId: actor.id, body: input.body, isInternal },
       select: { id: true, body: true, isInternal: true, createdAt: true },
     });
+    // Touch the complaint so open pages (and the live update stamp) see the new message.
+    await tx.complaint.update({
+      where: { id },
+      data: !isInternal && isStaff(actor) && !ref.firstResponseAt ? { firstResponseAt: new Date() } : { updatedAt: new Date() },
+    });
     if (isInternal) return { comment, deliveries: [] };
-
-    if (isStaff(actor) && !ref.firstResponseAt) {
-      await tx.complaint.update({ where: { id }, data: { firstResponseAt: new Date() } });
-    }
     await tx.complaintEvent.create({ data: { complaintId: id, actorId: actor.id, type: "COMMENTED" } });
 
     const deliveries = isStaff(actor)

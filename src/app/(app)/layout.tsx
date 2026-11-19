@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { StatusBanners } from "@/components/pwa/status-banners";
+import { LiveUpdates } from "@/components/live-updates";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const session = await requirePageSession();
@@ -44,6 +45,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       </div>
       <BottomNav role={actor.role} badges={badges} />
       <StatusBanners />
+      <LiveUpdates />
     </>
   );
 }

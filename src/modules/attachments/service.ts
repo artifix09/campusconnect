@@ -48,6 +48,7 @@ export async function uploadAttachment(actor: Actor, complaintId: string, file: 
       await tx.complaintEvent.create({
         data: { complaintId, actorId: actor.id, type: "ATTACHMENT_ADDED", metadata: { attachmentId: attachment.id } },
       });
+      await tx.complaint.update({ where: { id: complaintId }, data: { updatedAt: new Date() } });
       return attachment;
     });
   } catch (error) {
