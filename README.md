@@ -2,7 +2,7 @@
 
 Smart Campus Complaint and Feedback Management System. Students report campus issues, the system routes each one to the right department automatically, staff resolve them, and management watches trends. It works on the web and installs on phones and desktops as a PWA.
 
-**Status:** architecture, system design and the backend API are complete. The frontend (web app and PWA) is next.
+**Status:** architecture, backend API and the web app / PWA frontend are complete. Next: install, verify and deploy.
 
 ## Quick start (backend)
 
@@ -12,6 +12,7 @@ cp .env.example .env
 npm run dev:up        # Postgres, MinIO (S3) and Mailpit in Docker
 npm run db:deploy     # create the tables
 npm run db:seed       # departments, categories, staff and demo data
+npm run icons         # PNG app icons for the PWA
 npm run dev           # http://localhost:3000/api/v1
 node scripts/smoke-test.mjs   # end-to-end lifecycle and access-control checks
 ```
@@ -36,6 +37,7 @@ Start at **[docs/README.md](docs/README.md)**. For a single visual page with all
 | Standards and testing | [docs/10-engineering-standards-and-testing.md](docs/10-engineering-standards-and-testing.md) |
 | Roadmap and risks | [docs/11-delivery-roadmap.md](docs/11-delivery-roadmap.md) |
 | Backend guide | [docs/12-backend-guide.md](docs/12-backend-guide.md) |
+| Frontend design system | [docs/13-frontend-design.md](docs/13-frontend-design.md) |
 
 Regenerate the visual page after editing any document:
 
