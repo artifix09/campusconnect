@@ -1,0 +1,54 @@
+# Local development stack. Mirrors production services with open-source equivalents:
+# Neon -> Postgres, Cloudflare R2 -> MinIO, Resend -> Mailpit (SMTP + web inbox).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: campusconnect
+      POSTGRES_PASSWORD: campusconnect
+      POSTGRES_DB: campusconnect
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campusconnect"]
+      interval: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: campusconnect
+      MINIO_ROOT_PASSWORD: campusconnect-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  # Creates the private bucket once MinIO is up (uses the official AWS CLI image).
+  bucket-setup:
+    image: amazon/aws-cli:latest
+    depends_on:
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: campusconnect
+      AWS_SECRET_ACCESS_KEY: campusconnect-secret
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        until aws --endpoint-url http://minio:9000 s3 ls >/dev/null 2>&1; do sleep 1; done;
+        aws --endpoint-url http://minio:9000 s3 mb s3://campusconnect-dev || true
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  pgdata:
+  miniodata:

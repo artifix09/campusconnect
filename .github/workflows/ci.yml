@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: campusconnect
+          POSTGRES_PASSWORD: campusconnect
+          POSTGRES_DB: campusconnect
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U campusconnect"
+          --health-interval 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: test
+      APP_URL: http://localhost:3000
+      DATABASE_URL: postgresql://campusconnect:campusconnect@localhost:5432/campusconnect
+      DATABASE_URL_UNPOOLED: postgresql://campusconnect:campusconnect@localhost:5432/campusconnect
+      BETTER_AUTH_SECRET: ci-only-secret-0123456789abcdefghijklmnop
+      ALLOWED_EMAIL_DOMAINS: campusconnect.local
+      REQUIRE_ADMIN_2FA: "false"
+      S3_ENDPOINT: http://localhost:9000
+      S3_BUCKET: ci
+      S3_ACCESS_KEY_ID: ci
+      S3_SECRET_ACCESS_KEY: ci-secret
+      S3_FORCE_PATH_STYLE: "true"
+      CRON_SECRET: ci-cron-secret-0123456789
+      HEALTH_SECRET: ci-health-secret-0123456789
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Apply migrations to a fresh database
+        run: npx prisma migrate deploy
+
+      - name: Seed
+        run: npm run db:seed
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
