@@ -21,13 +21,17 @@ const RANGES = [
   { key: "all", label: "All time", days: 0 },
 ] as const;
 
+function daysAgo(days: number) {
+  return days ? new Date(Date.now() - days * 86_400_000) : undefined;
+}
+
 const SHORT: Record<string, string> = { CAFETERIA: "Cafeteria", LIBRARY: "Library", LAB_IT: "Labs & IT", ACADEMIC: "Academic" };
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
   const { actor } = await requirePageSession(["DEPT_ADMIN", "SUPER_ADMIN"]);
   const { range: rangeKey = "90" } = await searchParams;
   const range = RANGES.find((r) => r.key === rangeKey) ?? RANGES[1];
-  const from = range.days ? new Date(Date.now() - range.days * 86_400_000) : undefined;
+  const from = daysAgo(range.days);
   const isSuper = actor.role === "SUPER_ADMIN";
 
   const [summary, trend, byStatus, topIssues, byDepartment] = await Promise.all([

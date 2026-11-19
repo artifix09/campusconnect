@@ -60,6 +60,8 @@ export function NewComplaintForm({ categories, initialCategory }: { categories: 
   const fileRef = useRef<HTMLInputElement>(null);
 
   const category = useMemo(() => categories.find((c) => c.id === categoryId), [categories, categoryId]);
+  // Suggestions only apply to the current category and a meaningful title.
+  const suggestions = categoryId && title.trim().length >= 5 ? similar : [];
 
   // One key per draft: retries and offline replays never create a second complaint.
   useEffect(() => {
@@ -70,10 +72,7 @@ export function NewComplaintForm({ categories, initialCategory }: { categories: 
 
   // Suggest similar open complaints while the student types the title.
   useEffect(() => {
-    if (!categoryId || title.trim().length < 5) {
-      setSimilar([]);
-      return;
-    }
+    if (!categoryId || title.trim().length < 5) return;
     const timer = setTimeout(async () => {
       try {
         const res = await api<{ data: Similar[] }>(
@@ -90,7 +89,7 @@ export function NewComplaintForm({ categories, initialCategory }: { categories: 
   async function addPhotos(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []).slice(0, MAX_PHOTOS - photos.length);
     event.target.value = "";
-    const compressed = await Promise.all(files.map(compressImage));
+    const compressed = await Promise.all(files.map((file) => compressImage(file)));
     setPhotos((prev) => [...prev, ...compressed.map((file) => ({ file, url: URL.createObjectURL(file) }))]);
   }
 
@@ -253,12 +252,12 @@ export function NewComplaintForm({ categories, initialCategory }: { categories: 
               )}
             </Field>
 
-            {similar.length > 0 ? (
+            {suggestions.length > 0 ? (
               <div className="rounded-[1.25rem] bg-pending-soft p-4" aria-live="polite">
                 <p className="text-sm font-semibold text-ink">Others may have reported this already</p>
                 <p className="text-xs text-ink-soft">Add your support instead of filing a duplicate. You can still submit your own.</p>
                 <ul className="mt-3 flex flex-col gap-2">
-                  {similar.map((s) => (
+                  {suggestions.map((s) => (
                     <li key={s.id} className="flex items-center gap-3 rounded-2xl bg-surface p-3">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-ink">{s.title}</p>

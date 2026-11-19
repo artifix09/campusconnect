@@ -9,6 +9,7 @@ export const authClient = createAuthClient({
     inferAdditionalFields<typeof auth>(),
     twoFactorClient({
       onTwoFactorRedirect() {
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- runs outside React, router unavailable
         window.location.href = "/two-factor";
       },
     }),
@@ -30,5 +31,7 @@ export async function signOutEverywhere() {
     // IndexedDB unavailable (private mode)
   }
   await authClient.signOut();
+  // Full reload on purpose: drops every piece of the previous user's in-memory state.
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
   window.location.href = "/login";
 }

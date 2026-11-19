@@ -212,7 +212,7 @@ function pickStatus(i: number): ComplaintStatus {
 const SLA_HOURS: Record<Priority, number> = { URGENT: 24, HIGH: 72, MEDIUM: 168, LOW: 336 };
 const HOUR = 60 * 60 * 1000;
 
-async function seedDemo(departmentIds: Map<string, string>) {
+async function seedDemo() {
   if ((await db.complaint.count()) > 0) return 0;
 
   const password = process.env.SEED_ADMIN_PASSWORD ?? "Campus#Connect2026";
@@ -315,7 +315,7 @@ async function main() {
   }
 
   if (!isProduction) {
-    const demo = await seedDemo(departmentIds);
+    const demo = await seedDemo();
     if (demo) console.log(`\nDemo data: 6 students (student1..6@${domain}) and ${demo} complaints.`);
   }
 }

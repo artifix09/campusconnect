@@ -1,23 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { enablePush, pushSupport } from "./push";
+import { usePushSupport } from "@/lib/use-browser";
+import { enablePush } from "./push";
 
 /**
  * Asks for notification permission in context (after the student has a reason
  * to want updates), never on first visit.
  */
 export function PushPrompt() {
-  const [state, setState] = useState<"hidden" | "ask" | "denied" | "on">("hidden");
+  const support = usePushSupport();
+  const [result, setResult] = useState<"on" | "denied" | null>(null);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    const support = pushSupport();
-    if (support === "unsupported") return;
-    setState(support === "granted" ? "on" : support === "denied" ? "denied" : "ask");
-  }, []);
+  const state =
+    result ?? (support === "unsupported" ? "hidden" : support === "granted" ? "on" : support === "denied" ? "denied" : "ask");
 
   if (state === "hidden" || state === "on") return null;
 
@@ -44,7 +42,7 @@ export function PushPrompt() {
               setBusy(true);
               const ok = await enablePush();
               setBusy(false);
-              setState(ok ? "on" : "denied");
+              setResult(ok ? "on" : "denied");
             }}
           >
             Turn on notifications

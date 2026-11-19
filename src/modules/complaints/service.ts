@@ -51,7 +51,7 @@ async function nextReferenceNo(tx: Tx, now: Date): Promise<string> {
 }
 
 /** Writes only if nobody changed the complaint since we read it (ADR-010). */
-async function updateIfUnchanged(tx: Tx, ref: ComplaintRefRow, data: Prisma.ComplaintUpdateManyMutationInput) {
+async function updateIfUnchanged(tx: Tx, ref: ComplaintRefRow, data: Prisma.ComplaintUncheckedUpdateManyInput) {
   const result = await tx.complaint.updateMany({
     where: { id: ref.id, version: ref.version },
     data: { ...data, version: { increment: 1 } },
@@ -171,7 +171,7 @@ async function transition(
 
   const now = new Date();
   const isReopen = ref.status === "RESOLVED" && to === "IN_PROGRESS";
-  const data: Prisma.ComplaintUpdateManyMutationInput = { status: to };
+  const data: Prisma.ComplaintUncheckedUpdateManyInput = { status: to };
 
   if (isStaff(actor) && !ref.firstResponseAt) data.firstResponseAt = now;
   if (to === "RESOLVED") Object.assign(data, { resolvedAt: now, closedAt: now, resolutionNote: note });

@@ -3,26 +3,24 @@
 import { useEffect, useState } from "react";
 import { api, errorMessage } from "@/lib/api-client";
 import { FormMessage } from "@/components/ui/field";
-import { disablePush, enablePush, pushSupport, type PushSupport } from "@/components/notifications/push";
+import { disablePush, enablePush } from "@/components/notifications/push";
+import { usePushSupport } from "@/lib/use-browser";
 import { Toggle } from "./toggle";
 
 export function PreferencesForm({ email, push }: { email: boolean; push: boolean }) {
   const [prefs, setPrefs] = useState({ emailNotifications: email, pushNotifications: push });
-  const [device, setDevice] = useState<PushSupport>("unsupported");
+  const device = usePushSupport();
   const [deviceOn, setDeviceOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const support = pushSupport();
-    setDevice(support);
-    if (support === "granted") {
-      navigator.serviceWorker.ready
-        .then((r) => r.pushManager.getSubscription())
-        .then((s) => setDeviceOn(Boolean(s)))
-        .catch(() => setDeviceOn(false));
-    }
-  }, []);
+    if (device !== "granted") return;
+    navigator.serviceWorker.ready
+      .then((r) => r.pushManager.getSubscription())
+      .then((s) => setDeviceOn(Boolean(s)))
+      .catch(() => setDeviceOn(false));
+  }, [device]);
 
   async function save(next: typeof prefs) {
     const previous = prefs;

@@ -31,6 +31,7 @@ export function TwoFactorSetup({ onDone }: { onDone: () => void }) {
     const { data, error } = await authClient.twoFactor.enable({ password });
     setLoading(false);
     if (error || !data) return setError(error?.message ?? "Your password is not correct.");
+    if (!("totpURI" in data)) return setError("Authenticator apps are not enabled on this server.");
     setUri(data.totpURI);
     setBackupCodes(data.backupCodes);
     setStep("scan");

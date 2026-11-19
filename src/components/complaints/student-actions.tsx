@@ -12,6 +12,10 @@ import type { ComplaintStatus } from "@/domain/types";
 
 const REOPEN_DAYS = 7;
 
+function withinReopenWindow(resolvedAt: string | Date | null) {
+  return resolvedAt !== null && Date.now() - new Date(resolvedAt).getTime() < REOPEN_DAYS * 86_400_000;
+}
+
 /** Withdraw (pending), reopen (within 7 days of resolution) and rate (resolved). */
 export function StudentActions({
   complaintId,
@@ -34,11 +38,7 @@ export function StudentActions({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const canReopen =
-    status === "RESOLVED" &&
-    reopenCount < 1 &&
-    resolvedAt !== null &&
-    Date.now() - new Date(resolvedAt).getTime() < REOPEN_DAYS * 86_400_000;
+  const canReopen = status === "RESOLVED" && reopenCount < 1 && withinReopenWindow(resolvedAt);
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
