@@ -152,7 +152,7 @@ Modules talk to each other through exported service functions, never by reaching
 | SLA compliance % | Yes | Yes | Stat + bar | Makes deadlines visible |
 | Satisfaction (average rating) | Yes | Yes | Stat | Quality, not just speed |
 
-All analytics come from **SQL aggregate queries** (`GROUP BY`, `date_trunc`, `percentile_cont`) through the same scoped DAL. A department admin's dashboard therefore **can't** include other departments' numbers, even through the API. Results are cached for 60 seconds per scope, and a status change invalidates the cache (ADR-016).
+All analytics come from **SQL aggregate queries** (`GROUP BY`, `date_trunc`, `percentile_cont`) through the same scoped DAL. A department admin's dashboard therefore **can't** include other departments' numbers, even through the API. Results are cached for 60 seconds per scope (ADR-016).
 
 ## 7. Request lifecycle (where each check happens)
 
@@ -229,7 +229,7 @@ campusconnect/
 | **Errors** | Typed domain errors (`NotFoundError`, `ForbiddenError`, `ConflictError`, `ValidationError`, `RateLimitedError`) map to HTTP codes in one place. The API returns RFC 9457 `application/problem+json`. Users never see stack traces. |
 | **Logging** | pino JSON logs carrying `requestId`, `actorId`, `role` and `route`, with **no** passwords, tokens or complaint text. Logs are shipped through a Vercel log drain. |
 | **Time** | Stored as `timestamptz` in UTC and rendered in `Asia/Karachi`. A `Clock` adapter lets SLA logic be tested deterministically. |
-| **Caching** | Static assets: immutable CDN cache. Pages that depend on the user: `no-store` at the CDN. Analytics: 60-second server cache tagged per scope. PWA: see [07](07-pwa-and-mobile.md). |
+| **Caching** | Static assets: immutable CDN cache. Pages that depend on the user: `no-store` at the CDN. Analytics: 60-second server cache per scope. PWA: see [07](07-pwa-and-mobile.md). |
 | **Transactions** | Any write that touches more than one table (complaint + event + notification) runs in a single `prisma.$transaction`. |
 | **Idempotency** | Complaint creation accepts a client-generated `Idempotency-Key`, so an offline draft replayed twice creates **one** complaint. |
 | **i18n** | All UI strings go through a message catalogue (`next-intl`), so Urdu with right-to-left layout can be added in Phase 3 without hunting for hard-coded strings. |

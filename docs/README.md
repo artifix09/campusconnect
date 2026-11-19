@@ -18,6 +18,7 @@
 | 09 | [Deployment & Operations](09-deployment-and-operations.md) | Topology, environments, CI/CD, migrations, backups, monitoring, runbooks, cost, self-host |
 | 10 | [Engineering Standards & Testing](10-engineering-standards-and-testing.md) | Code rules, git workflow, test pyramid, quality gates, Definition of Done |
 | 11 | [Delivery Roadmap & Risks](11-delivery-roadmap.md) | Phases, exit criteria, risk register, responsibilities |
+| 12 | [Backend Guide](12-backend-guide.md) | Running locally, code map, where each requirement is enforced, implementation notes |
 
 ## The design in one diagram
 

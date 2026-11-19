@@ -21,7 +21,7 @@
 | Password policy | Min 10 chars, checked against breached-password lists (HIBP k-anonymity), no composition rules | NIST SP 800-63B guidance: length and breach checks beat complexity rules |
 | Hashing | scrypt (Better Auth default) | Memory-hard, so offline cracking is expensive |
 | Sessions | Random token in an httpOnly, `Secure`, `SameSite=Lax` cookie with the `__Secure-` prefix, stored in the DB | No JS access (XSS can't steal it), revocable server-side |
-| Session lifetime | Students: 7 days sliding. Admins: 12 h idle, 7 days absolute. | Admins hold more sensitive access |
+| Session lifetime | Students: 7 days sliding. Admins: 12 hours maximum, then sign in again. | Admins hold more sensitive access |
 | Admin 2FA | TOTP (authenticator app) **mandatory** for `DEPT_ADMIN` and `SUPER_ADMIN`, with one-time backup codes | A stolen password alone can't open admin data |
 | Brute force | 5 attempts / 15 min per IP+email (ADR-014), constant-time responses, generic error ("Invalid email or password") | Prevents credential stuffing and account enumeration |
 | Password reset | Single-use token, 30 min expiry, all sessions revoked after reset | Standard secure reset |
@@ -190,7 +190,7 @@ Set in `next.config.ts` and the proxy (a nonce is generated per request for CSP)
 |---|---|
 | Count | ≤ 3 images per complaint |
 | Size | ≤ 4 MB per upload (after client compression) |
-| Type | Magic-byte detection: JPEG, PNG, WebP, HEIC only. **SVG and GIF rejected.** |
+| Type | Magic-byte detection: JPEG, PNG, WebP, AVIF only. **SVG and GIF rejected.** (iOS converts HEIC photos to JPEG on upload.) |
 | Dimensions | ≤ 40 megapixels, checked before decoding fully (decompression-bomb guard) |
 | Processing | `sharp` re-encodes to WebP, max 1600 px, **all metadata stripped** |
 | Storage | Private R2 bucket. Key = random UUID (no user-controlled filenames). |

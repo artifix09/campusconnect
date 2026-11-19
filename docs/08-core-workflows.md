@@ -47,7 +47,7 @@ sequenceDiagram
     else role is DEPT_ADMIN or SUPER_ADMIN
         AUTH-->>U: 2FA challenge
         U->>AUTH: 6-digit TOTP code (or backup code)
-        AUTH->>DB: verify TOTP, create session (12 h idle)
+        AUTH->>DB: verify TOTP, create session (12 h max)
         AUTH-->>U: Set-Cookie __Secure-session, redirect /admin
     else student
         AUTH->>DB: create session (7 d sliding)
@@ -106,7 +106,7 @@ sequenceDiagram
     C->>API: multipart image (<= 4 MB)
     API->>SVC: upload(actor, complaintId, file)
     SVC->>DB: findComplaintForActor (scope check) + count attachments < 3
-    SVC->>SVC: magic bytes check (JPEG / PNG / WebP / HEIC), pixel limit
+    SVC->>SVC: magic bytes check (JPEG / PNG / WebP / AVIF), pixel limit
     SVC->>SVC: sharp: rotate by EXIF, resize, encode WebP, strip ALL metadata
     SVC->>R2: PUT complaints/{complaintId}/{uuid}.webp
     SVC->>DB: INSERT attachment + event ATTACHMENT_ADDED

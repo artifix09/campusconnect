@@ -318,7 +318,7 @@ Every change writes an immutable `ComplaintEvent` row (`from`, `to`, `actor`, `n
 
 ## ADR-016 · Analytics from live SQL aggregates with a short cache
 
-**Decision.** Dashboard numbers come from indexed aggregate queries through the scoped DAL, cached for **60 seconds per scope** (`all` / `dept:<id>`) with tag-based invalidation on writes.
+**Decision.** Dashboard numbers come from indexed aggregate queries through the scoped DAL, cached for **60 seconds per scope** (`all` / `dept:<id>`) in each server instance.
 
 **Why.** At this data volume the aggregates take milliseconds. A warehouse or ETL pipeline would add latency (stale data) and cost. Because analytics go through the same DAL, **a department admin's charts can't include other departments' numbers**. The 60-second cache protects the database from dashboards left on auto-refresh.
 

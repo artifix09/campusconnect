@@ -280,12 +280,12 @@ export const TRANSITIONS = {
 | Dept admin queue: `WHERE department_id = ? AND status = ? ORDER BY created_at DESC` | `(department_id, status, created_at DESC)` | The busiest admin query. Covers filter and sort. |
 | Student "my complaints": `WHERE student_id = ? ORDER BY created_at DESC` | `(student_id, created_at DESC)` | Student home screen |
 | Super admin filters by category or status | `(category_id, status)`, `(status, created_at DESC)` | Global filtering |
-| Overdue scan | partial `(due_at) WHERE status IN ('PENDING','IN_PROGRESS')` | Small index, fast hourly cron |
+| Overdue scan | `(status, due_at)` | Fast hourly SLA cron |
 | Full-text search | `GIN (search_vector)` | ADR-015 |
 | Similar-complaint suggestion | `GIN (title gin_trgm_ops)` | Fuzzy title match in the same category |
 | Timeline | `complaint_event (complaint_id, created_at)` | Complaint detail page |
-| Unread notifications | partial `notification (user_id, created_at DESC) WHERE read_at IS NULL` | Badge count |
-| Delivery retries | partial `notification_delivery (next_attempt_at) WHERE status = 'PENDING'` | Retry cron |
+| Unread notifications | `notification (user_id, read_at)` | Badge count |
+| Delivery retries | `notification_delivery (status, next_attempt_at)` | Retry cron |
 | Audit lookup | `audit_log (entity_type, entity_id, created_at)`, `audit_log (actor_id, created_at)` | Investigations |
 
 Foreign-key columns are indexed so joins and `ON DELETE RESTRICT` checks don't scan tables.
