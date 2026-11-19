@@ -35,9 +35,10 @@ const schema = z
 
     S3_ENDPOINT: optional,
     S3_REGION: z.string().default("auto"),
-    S3_BUCKET: z.string().min(1),
-    S3_ACCESS_KEY_ID: z.string().min(1),
-    S3_SECRET_ACCESS_KEY: z.string().min(1),
+    // Optional so a staging deployment can run before object storage exists; required in production.
+    S3_BUCKET: optional,
+    S3_ACCESS_KEY_ID: optional,
+    S3_SECRET_ACCESS_KEY: optional,
     S3_FORCE_PATH_STYLE: bool(false),
 
     UPSTASH_REDIS_REST_URL: optional,
@@ -63,6 +64,9 @@ const schema = z
       "RESEND_API_KEY",
       "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
       "VAPID_PRIVATE_KEY",
+      "S3_BUCKET",
+      "S3_ACCESS_KEY_ID",
+      "S3_SECRET_ACCESS_KEY",
     ];
     for (const key of required) {
       if (!env[key]) ctx.addIssue({ code: "custom", path: [key], message: `${key} is required in production` });
@@ -91,9 +95,6 @@ function load(): Env {
       ...process.env,
       DATABASE_URL: process.env.DATABASE_URL || "postgresql://build:build@localhost:5432/build",
       BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || "build-time-placeholder-secret-0000000000",
-      S3_BUCKET: process.env.S3_BUCKET || "build",
-      S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID || "build",
-      S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY || "build",
       CRON_SECRET: process.env.CRON_SECRET || "build-time-placeholder",
       HEALTH_SECRET: process.env.HEALTH_SECRET || "build-time-placeholder",
       APP_ENV: "development",

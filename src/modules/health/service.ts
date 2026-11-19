@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
-import { storage } from "@/lib/storage";
+import { storage, storageEnabled } from "@/lib/storage";
 
 async function probe(check: () => Promise<unknown>) {
   const started = performance.now();
@@ -15,7 +15,7 @@ async function probe(check: () => Promise<unknown>) {
 export async function deepHealth() {
   const [database, objectStorage] = await Promise.all([
     probe(() => db.$queryRaw`SELECT 1`),
-    probe(() => storage.ping()),
+    storageEnabled ? probe(() => storage.ping()) : Promise.resolve({ ok: true, disabled: true }),
   ]);
   return { ok: database.ok && objectStorage.ok, database, storage: objectStorage };
 }

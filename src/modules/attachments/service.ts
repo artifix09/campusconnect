@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { BusinessRuleError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { enforceRateLimit } from "@/lib/rate-limit";
-import { storage } from "@/lib/storage";
+import { storage, storageEnabled } from "@/lib/storage";
 import { audit } from "@/modules/audit/service";
 import { findForActor } from "@/modules/complaints/repository";
 import { complaintScope } from "@/domain/policy";
@@ -18,6 +18,7 @@ export async function uploadAttachment(actor: Actor, complaintId: string, file: 
     throw new ValidationError("Attach one image in the 'file' field.");
   }
 
+  if (!storageEnabled) throw new BusinessRuleError("Photo uploads are not set up on this server yet.");
   await findForActor(actor, complaintId, "attach");
   await enforceRateLimit("uploadImage", actor.id);
 
