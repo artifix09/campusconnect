@@ -1,12 +1,10 @@
-// Placeholder until the frontend phase. The API lives under /api/v1.
-export default function HomePage() {
-  return (
-    <main style={{ fontFamily: "system-ui, sans-serif", padding: "48px 16px", maxWidth: 640, margin: "0 auto" }}>
-      <h1>CampusConnect</h1>
-      <p>The API is running. The web app is coming next.</p>
-      <p>
-        Health check: <a href="/api/health">/api/health</a>
-      </p>
-    </main>
-  );
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSessionState } from "@/lib/session";
+
+// The app has no public landing page: signed-in users go to their home, others to sign-in.
+export default async function Home() {
+  const state = await getSessionState(await headers());
+  if (!state) redirect("/login");
+  redirect(state.actor.role === "STUDENT" ? "/student" : "/admin");
 }

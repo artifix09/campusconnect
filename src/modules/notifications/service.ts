@@ -189,6 +189,10 @@ export async function listNotifications(actor: Actor, query: z.infer<typeof List
   return { data, unreadCount, nextCursor: hasMore ? data.at(-1)?.id : null };
 }
 
+export function countUnread(actor: Actor) {
+  return db.notification.count({ where: { userId: actor.id, readAt: null } });
+}
+
 export const MarkReadInput = z.union([
   z.object({ all: z.literal(true) }),
   z.object({ ids: z.array(z.uuid()).min(1).max(200) }),
