@@ -45,7 +45,7 @@ export function Sidebar({ role, badges }: { role: Role; badges: Badges }) {
   return (
     <aside
       aria-label="Main navigation"
-      className="sticky top-4 hidden h-[calc(100dvh-2rem)] w-[17rem] shrink-0 flex-col overflow-y-auto rounded-[var(--radius-panel)] bg-shell px-5 py-7 lg:flex"
+      className="sticky top-4 hidden h-[calc(100dvh-2rem)] w-[15rem] shrink-0 xl:w-[17rem] flex-col overflow-y-auto rounded-[var(--radius-panel)] bg-shell px-5 py-7 lg:flex"
     >
       <Link href={homeFor(role)} className="mb-10 px-2 focus-ring rounded-xl">
         <Logo />

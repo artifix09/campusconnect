@@ -70,7 +70,7 @@ export default async function AdminDashboard() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           featured
           label="Total complaints"
@@ -97,7 +97,7 @@ export default async function AdminDashboard() {
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-12">
         <Card className="xl:col-span-5">
           <CardHeader title="Complaints this week" description={`${thisWeek} received so far`} />
           <PillBars data={week} caption="Complaints received per day this week" />
@@ -123,7 +123,7 @@ export default async function AdminDashboard() {
           )}
         </Card>
 
-        <Card className="xl:col-span-3 xl:row-span-2">
+        <Card className="lg:row-span-2 xl:col-span-3">
           <CardHeader
             title="Most reported"
             action={
@@ -192,9 +192,9 @@ export default async function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3 xl:grid-cols-12">
         {isSuper ? (
-          <Card className="xl:col-span-9">
+          <Card className="lg:col-span-2 xl:col-span-9">
             <CardHeader title="Complaints by department" description="How many complaints each office has received, by status." />
             <DepartmentBars
               data={byDepartment.map((d) => ({
@@ -209,7 +209,7 @@ export default async function AdminDashboard() {
             />
           </Card>
         ) : (
-          <Card className="xl:col-span-8">
+          <Card className="lg:col-span-2 xl:col-span-8">
             <CardHeader title="Last 12 weeks" description="Complaints received and resolved each week." />
             <TrendChart
               data={weekly.map((w) => ({

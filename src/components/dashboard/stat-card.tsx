@@ -22,7 +22,9 @@ export function StatCard({
   const body = (
     <>
       <div className="flex items-start justify-between gap-3">
-        <p className={cn("text-[0.9375rem] font-semibold sm:text-base", featured ? "text-white" : "text-ink")}>{label}</p>
+        <p className={cn("text-[0.9375rem] font-semibold [overflow-wrap:normal] sm:text-base", featured ? "text-white" : "text-ink")}>
+          {label}
+        </p>
         {href || icon ? (
           <span
             aria-hidden
@@ -37,7 +39,7 @@ export function StatCard({
       </div>
       <p
         className={cn(
-          "mt-4 text-[2rem] font-semibold leading-none tracking-tight tabular-nums [overflow-wrap:normal] sm:text-5xl",
+          "mt-4 text-[2rem] font-semibold leading-none tracking-tight tabular-nums [overflow-wrap:normal] sm:text-5xl lg:text-4xl xl:text-5xl",
           featured ? "text-white" : "text-ink",
         )}
       >

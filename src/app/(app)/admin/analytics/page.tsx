@@ -68,15 +68,15 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard featured label="Complaints" value={summary.total} note={`In the last ${range.days ? range.label : "period"}`} />
         <StatCard label="Avg. resolution" value={formatHours(summary.avgResolutionHours)} note="From report to resolved" />
         <StatCard label="On-time rate" value={summary.slaCompliance === null ? "No data" : `${summary.slaCompliance}%`} note="Resolved before the due date" />
         <StatCard label="Satisfaction" value={summary.avgRating === null ? "No data" : `${summary.avgRating}/5`} note="Average student rating" />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader title="Received vs resolved" description="Last 12 weeks" />
           <TrendChart
             data={trend.map((t) => ({ label: formatShortDate(t.period), created: t.created, resolved: t.resolved }))}
@@ -101,7 +101,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </Card>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader title={isSuper ? "Complaints by department" : "Your department"} description="Bar heights share one scale." />
           <DepartmentBars

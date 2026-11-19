@@ -47,7 +47,7 @@ export default async function StudentDashboard() {
 
       <OutboxList />
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard featured label="Total reported" value={summary.total} href="/student/complaints" note="All your complaints" />
         <StatCard label="Resolved" value={summary.resolved} href="/student/complaints?status=RESOLVED" note={summary.avgRating ? `Your average rating ${summary.avgRating}` : "Fixed by departments"} />
         <StatCard label="In progress" value={summary.inProgress} href="/student/complaints?status=IN_PROGRESS" note="Being worked on" />

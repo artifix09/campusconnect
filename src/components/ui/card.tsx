@@ -49,7 +49,7 @@ export function PageHeader({
         <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight text-ink sm:text-4xl">{title}</h1>
         {description ? <p className="mt-1.5 text-[0.9375rem] text-muted">{description}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 flex-wrap gap-3">{actions}</div> : null}
     </div>
   );
 }
