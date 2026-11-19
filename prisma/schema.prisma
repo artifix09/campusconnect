@@ -1,0 +1,431 @@
+// CampusConnect database schema.
+// Design notes: docs/04-data-model.md. CHECK constraints, the generated search
+// vector and the trigram/partial indexes live in hand-written migration SQL.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DATABASE_URL_UNPOOLED")
+  extensions = [pg_trgm]
+}
+
+enum Role {
+  STUDENT
+  DEPT_ADMIN
+  SUPER_ADMIN
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum EventType {
+  CREATED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  REASSIGNED
+  COMMENTED
+  REOPENED
+  RATED
+  ATTACHMENT_ADDED
+  IDENTITY_REVEALED
+  ESCALATED
+}
+
+enum DeliveryChannel {
+  PUSH
+  EMAIL
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum AuditOutcome {
+  ALLOWED
+  DENIED
+}
+
+// ---------------------------------------------------------------------------
+// Identity (field names follow what Better Auth expects)
+// ---------------------------------------------------------------------------
+
+model User {
+  id                 String    @id @db.Uuid
+  name               String
+  email              String    @unique
+  emailVerified      Boolean   @default(false) @map("email_verified")
+  image              String?
+  role               Role      @default(STUDENT)
+  departmentId       String?   @map("department_id") @db.Uuid
+  registrationNo     String?   @unique @map("registration_no")
+  isActive           Boolean   @default(true) @map("is_active")
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
+  twoFactorEnabled   Boolean   @default(false) @map("two_factor_enabled")
+  emailNotifications Boolean   @default(true) @map("email_notifications")
+  pushNotifications  Boolean   @default(true) @map("push_notifications")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  department        Department?        @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  sessions          Session[]
+  accounts          Account[]
+  twoFactors        TwoFactor[]
+  complaints        Complaint[]        @relation("StudentComplaints")
+  events            ComplaintEvent[]
+  comments          ComplaintComment[]
+  attachments       Attachment[]
+  supports          ComplaintSupport[]
+  notifications     Notification[]
+  pushSubscriptions PushSubscription[]
+  auditLogs         AuditLog[]
+
+  @@index([departmentId])
+  @@index([role])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @db.Uuid
+  userId                String    @map("user_id") @db.Uuid
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+/// Better Auth sign-in throttling, stored in Postgres so every serverless instance shares it.
+model RateLimit {
+  id          String @id @db.Uuid
+  key         String @unique
+  count       Int
+  lastRequest BigInt @map("last_request")
+
+  @@map("rate_limit")
+}
+
+model TwoFactor {
+  id          String @id @db.Uuid
+  userId      String @map("user_id") @db.Uuid
+  secret      String
+  backupCodes String @map("backup_codes")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("two_factor")
+}
+
+// ---------------------------------------------------------------------------
+// Organization and routing
+// ---------------------------------------------------------------------------
+
+model Department {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  code         String   @unique
+  name         String
+  contactEmail String?  @map("contact_email")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  categories Category[]
+  admins     User[]
+  complaints Complaint[]
+
+  @@map("department")
+}
+
+/// A category is the routing rule: every complaint filed under it goes to `department`.
+model Category {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  code         String   @unique
+  name         String
+  description  String?
+  departmentId String   @map("department_id") @db.Uuid
+  sortOrder    Int      @default(0) @map("sort_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  department Department  @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  issueTypes IssueType[]
+  complaints Complaint[]
+
+  @@index([departmentId])
+  @@map("category")
+}
+
+model IssueType {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  name       String
+  sortOrder  Int      @default(0) @map("sort_order")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  complaints Complaint[]
+
+  @@unique([categoryId, name])
+  @@map("issue_type")
+}
+
+// ---------------------------------------------------------------------------
+// Complaints
+// ---------------------------------------------------------------------------
+
+model Complaint {
+  id                 String          @id @default(uuid(7)) @db.Uuid
+  referenceNo        String          @unique @map("reference_no")
+  studentId          String          @map("student_id") @db.Uuid
+  categoryId         String          @map("category_id") @db.Uuid
+  issueTypeId        String?         @map("issue_type_id") @db.Uuid
+  departmentId       String          @map("department_id") @db.Uuid
+  title              String          @db.VarChar(120)
+  description        String
+  location           String?         @db.VarChar(120)
+  status             ComplaintStatus @default(PENDING)
+  priority           Priority        @default(MEDIUM)
+  isAnonymous        Boolean         @default(false) @map("is_anonymous")
+  dueAt              DateTime        @map("due_at") @db.Timestamptz
+  firstResponseAt    DateTime?       @map("first_response_at") @db.Timestamptz
+  resolvedAt         DateTime?       @map("resolved_at") @db.Timestamptz
+  closedAt           DateTime?       @map("closed_at") @db.Timestamptz
+  resolutionNote     String?         @map("resolution_note")
+  rejectionReason    String?         @map("rejection_reason")
+  satisfactionRating Int?            @map("satisfaction_rating") @db.SmallInt
+  ratingComment      String?         @map("rating_comment")
+  supportCount       Int             @default(0) @map("support_count")
+  reopenCount        Int             @default(0) @map("reopen_count")
+  overdueNotifiedAt  DateTime?       @map("overdue_notified_at") @db.Timestamptz
+  escalatedAt        DateTime?       @map("escalated_at") @db.Timestamptz
+  version            Int             @default(1)
+  idempotencyKey     String?         @map("idempotency_key") @db.VarChar(64)
+  /// Generated by Postgres from reference number, title and description (see migration constraints_and_search).
+  searchVector       Unsupported("tsvector")? @default(dbgenerated()) @map("search_vector")
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  student     User               @relation("StudentComplaints", fields: [studentId], references: [id], onDelete: Restrict)
+  category    Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  issueType   IssueType?         @relation(fields: [issueTypeId], references: [id], onDelete: SetNull)
+  department  Department         @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  events      ComplaintEvent[]
+  comments    ComplaintComment[]
+  attachments Attachment[]
+  supporters  ComplaintSupport[]
+
+  @@unique([studentId, idempotencyKey])
+  @@index([departmentId, status, createdAt(sort: Desc)])
+  @@index([studentId, createdAt(sort: Desc)])
+  @@index([categoryId, status])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([status, dueAt])
+  @@index([searchVector], type: Gin, map: "complaint_search_idx")
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "complaint_title_trgm_idx")
+  @@map("complaint")
+}
+
+model ComplaintEvent {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  complaintId String           @map("complaint_id") @db.Uuid
+  actorId     String?          @map("actor_id") @db.Uuid
+  type        EventType
+  fromStatus  ComplaintStatus? @map("from_status")
+  toStatus    ComplaintStatus? @map("to_status")
+  note        String?
+  metadata    Json?
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([complaintId, createdAt])
+  @@index([actorId])
+  @@map("complaint_event")
+}
+
+model ComplaintComment {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  complaintId String   @map("complaint_id") @db.Uuid
+  authorId    String   @map("author_id") @db.Uuid
+  body        String
+  isInternal  Boolean  @default(false) @map("is_internal")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([complaintId, createdAt])
+  @@map("complaint_comment")
+}
+
+model Attachment {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  complaintId  String   @map("complaint_id") @db.Uuid
+  uploadedById String   @map("uploaded_by_id") @db.Uuid
+  storageKey   String   @unique @map("storage_key")
+  mimeType     String   @map("mime_type")
+  sizeBytes    Int      @map("size_bytes")
+  width        Int
+  height       Int
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  complaint  Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  uploadedBy User      @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([complaintId])
+  @@map("attachment")
+}
+
+model ComplaintSupport {
+  complaintId String   @map("complaint_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([complaintId, userId])
+  @@index([userId])
+  @@map("complaint_support")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  type      String
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime? @map("read_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+  @@map("notification")
+}
+
+model NotificationDelivery {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  notificationId String          @map("notification_id") @db.Uuid
+  channel        DeliveryChannel
+  status         DeliveryStatus  @default(PENDING)
+  attempts       Int             @default(0)
+  nextAttemptAt  DateTime        @default(now()) @map("next_attempt_at") @db.Timestamptz
+  lastError      String?         @map("last_error")
+  sentAt         DateTime?       @map("sent_at") @db.Timestamptz
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId])
+  @@index([status, nextAttemptAt])
+  @@map("notification_delivery")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscription")
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String       @id @default(uuid(7)) @db.Uuid
+  actorId    String?      @map("actor_id") @db.Uuid
+  action     String
+  entityType String       @map("entity_type")
+  entityId   String?      @map("entity_id")
+  outcome    AuditOutcome
+  ip         String?
+  userAgent  String?      @map("user_agent")
+  metadata   Json?
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([outcome, createdAt])
+  @@map("audit_log")
+}
