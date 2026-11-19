@@ -23,8 +23,14 @@ class ResendMailer implements Mailer {
 
 class SmtpMailer implements Mailer {
   private readonly transport;
-  constructor(host: string, port: number) {
-    this.transport = nodemailer.createTransport({ host, port, secure: port === 465 });
+  constructor(host: string, port: number, user?: string, pass?: string) {
+    // Port 465 uses TLS from the start; 587 upgrades with STARTTLS. Gmail needs an app password.
+    this.transport = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: user && pass ? { user, pass } : undefined,
+    });
   }
   async send(email: Email) {
     await this.transport.sendMail({ from: env.EMAIL_FROM, ...email });
@@ -40,7 +46,7 @@ class LogMailer implements Mailer {
 const mailer: Mailer = env.RESEND_API_KEY
   ? new ResendMailer(env.RESEND_API_KEY)
   : env.SMTP_HOST
-    ? new SmtpMailer(env.SMTP_HOST, env.SMTP_PORT)
+    ? new SmtpMailer(env.SMTP_HOST, env.SMTP_PORT, env.SMTP_USER, env.SMTP_PASSWORD)
     : new LogMailer();
 
 export function sendEmail(email: Email) {

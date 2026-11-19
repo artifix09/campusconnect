@@ -40,6 +40,8 @@ const schema = z
     S3_ACCESS_KEY_ID: optional,
     S3_SECRET_ACCESS_KEY: optional,
     S3_FORCE_PATH_STYLE: bool(false),
+    /** Vercel Blob (private store). Takes precedence over S3 when set. */
+    BLOB_READ_WRITE_TOKEN: optional,
 
     UPSTASH_REDIS_REST_URL: optional,
     UPSTASH_REDIS_REST_TOKEN: optional,
@@ -48,6 +50,8 @@ const schema = z
     RESEND_API_KEY: optional,
     SMTP_HOST: optional,
     SMTP_PORT: z.coerce.number().int().default(1025),
+    SMTP_USER: optional,
+    SMTP_PASSWORD: optional,
 
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: optional,
     VAPID_PRIVATE_KEY: optional,
@@ -61,15 +65,17 @@ const schema = z
     const required: (keyof typeof env)[] = [
       "UPSTASH_REDIS_REST_URL",
       "UPSTASH_REDIS_REST_TOKEN",
-      "RESEND_API_KEY",
       "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
       "VAPID_PRIVATE_KEY",
-      "S3_BUCKET",
-      "S3_ACCESS_KEY_ID",
-      "S3_SECRET_ACCESS_KEY",
     ];
     for (const key of required) {
       if (!env[key]) ctx.addIssue({ code: "custom", path: [key], message: `${key} is required in production` });
+    }
+    if (!env.RESEND_API_KEY && !(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASSWORD)) {
+      ctx.addIssue({ code: "custom", path: ["RESEND_API_KEY"], message: "Configure Resend or an authenticated SMTP server in production" });
+    }
+    if (!env.BLOB_READ_WRITE_TOKEN && !(env.S3_BUCKET && env.S3_ACCESS_KEY_ID && env.S3_SECRET_ACCESS_KEY)) {
+      ctx.addIssue({ code: "custom", path: ["BLOB_READ_WRITE_TOKEN"], message: "Configure Vercel Blob or an S3 bucket in production" });
     }
     if (env.ALLOWED_EMAIL_DOMAINS.length === 0) {
       ctx.addIssue({
@@ -88,6 +94,9 @@ function source(): NodeJS.ProcessEnv {
   return {
     ...process.env,
     APP_URL: process.env.APP_URL || (vercelHost ? `https://${vercelHost}` : undefined),
+    // The Vercel Marketplace names Upstash credentials KV_REST_API_*.
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN,
   };
 }
 

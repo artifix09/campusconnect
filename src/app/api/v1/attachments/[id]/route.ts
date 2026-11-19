@@ -1,10 +1,20 @@
 import { route, uuidParam } from "@/lib/http";
 import { requireActor } from "@/lib/session";
-import { attachmentUrl } from "@/modules/attachments/service";
+import { openAttachment } from "@/modules/attachments/service";
 
-/** Redirects to a 5-minute signed URL after checking access to the parent complaint. */
+/**
+ * Streams a complaint photo after checking access to its complaint. The
+ * storage location is never exposed, and the browser may only cache it privately.
+ */
 export const GET = route<{ id: string }>(async (req, { params }) => {
   const actor = await requireActor(req);
-  const url = await attachmentUrl(actor, uuidParam(params.id, "Image"));
-  return new Response(null, { status: 302, headers: { Location: url, "Cache-Control": "private, no-store" } });
+  const file = await openAttachment(actor, uuidParam(params.id, "Image"));
+  return new Response(file.body, {
+    headers: {
+      "Content-Type": file.contentType,
+      "Content-Disposition": "inline",
+      "Cache-Control": "private, max-age=300",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 });

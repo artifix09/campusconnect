@@ -57,8 +57,8 @@ export async function uploadAttachment(actor: Actor, complaintId: string, file: 
   }
 }
 
-/** Returns a 5-minute signed URL, after the same access check as the parent complaint. */
-export async function attachmentUrl(actor: Actor, attachmentId: string) {
+/** Opens the image for streaming, after the same access check as the parent complaint. */
+export async function openAttachment(actor: Actor, attachmentId: string) {
   const attachment = await db.attachment.findFirst({
     where: { id: attachmentId, complaint: complaintScope(actor) },
     select: { storageKey: true },
@@ -71,5 +71,5 @@ export async function attachmentUrl(actor: Actor, attachmentId: string) {
     throw new ForbiddenError("You do not have access to this image.");
   }
 
-  return storage.signedUrl(attachment.storageKey);
+  return storage.open(attachment.storageKey);
 }
