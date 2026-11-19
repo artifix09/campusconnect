@@ -171,19 +171,20 @@ export const TopIssuesQuery = RangeQuery.extend({
 export function getTopIssues(actor: Actor, query: z.infer<typeof TopIssuesQuery>) {
   return cached(`top:${scopeKey(actor)}:${rangeKey(query)}:${query.limit}`, async () => {
     const rows = await db.$queryRaw<Record<string, unknown>[]>`
-      SELECT coalesce(i.name, 'Other') AS "issueType", cat.name AS category,
+      SELECT coalesce(i.name, 'Other') AS "issueType", cat.name AS category, cat.code AS "categoryCode",
              count(*) AS total, sum(c.support_count) AS supporters,
              count(*) FILTER (WHERE c.status IN ('PENDING','IN_PROGRESS')) AS open
       FROM complaint c
       JOIN category cat ON cat.id = c.category_id
       LEFT JOIN issue_type i ON i.id = c.issue_type_id
       WHERE ${scopeSql(actor)} ${rangeSql(query)}
-      GROUP BY 1, 2
+      GROUP BY 1, 2, 3
       ORDER BY total DESC, supporters DESC
       LIMIT ${query.limit}`;
     return rows.map((r) => ({
       issueType: r.issueType as string,
       category: r.category as string,
+      categoryCode: r.categoryCode as string,
       total: num(r.total) ?? 0,
       open: num(r.open) ?? 0,
       supporters: num(r.supporters) ?? 0,
