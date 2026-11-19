@@ -101,18 +101,20 @@ export const auth = betterAuth({
 
   rateLimit: {
     // Shared across serverless instances through the rate_limit table; off for local development.
+    // Limits are per IP address. A whole campus often shares one public IP, so they are
+    // sized for a busy shared network while still making password guessing slow.
     enabled: env.APP_ENV === "production" || env.APP_ENV === "preview",
     storage: "database",
     window: 60,
-    max: 100,
+    max: 300,
     customRules: {
-      "/sign-in/email": { window: 15 * 60, max: 5 },
-      "/sign-up/email": { window: 60 * 60, max: 3 },
-      "/request-password-reset": { window: 60 * 60, max: 3 },
-      "/forget-password": { window: 60 * 60, max: 3 },
-      "/send-verification-email": { window: 60 * 60, max: 3 },
-      "/two-factor/verify-totp": { window: 15 * 60, max: 5 },
-      "/two-factor/verify-backup-code": { window: 15 * 60, max: 5 },
+      "/sign-in/email": { window: 60, max: 30 },
+      "/sign-up/email": { window: 10 * 60, max: 20 },
+      "/request-password-reset": { window: 10 * 60, max: 10 },
+      "/forget-password": { window: 10 * 60, max: 10 },
+      "/send-verification-email": { window: 10 * 60, max: 10 },
+      "/two-factor/verify-totp": { window: 60, max: 10 },
+      "/two-factor/verify-backup-code": { window: 60, max: 10 },
     },
   },
 
